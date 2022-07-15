@@ -1,0 +1,208 @@
+\chapter{Ewaluacja układów}
+\label{chapter:3}
+
+\section{Wprowadzenie}
+
+Podstawą działania kalkulatorów szans jest algorytm odpowiedzialny za określanie siły ręki. W przypadku odmiany Poker Texas Hold’em należy określić ją na podstawie 7 kart - 2 gracza oraz 5 wspólnych. Program, który realizuje powyższe zadanie nazwiemy ewaluatorem. Szybkość ewaluacji jest najistotniejsza z punktu widzenia naszej aplikacji, ponieważ to właśnie ten proces zajmuje zdecydowaną większość czasu odpowiedzi serwera.
+
+\section{Ewaluator Cactus Kev's}
+
+Kevin Suffecool, autor ewaluatora \emph{Cactus Kev's} \cite{cactus-kev-evaluator} \cite{cactus-kev-equivalence-classes} zauważył, że 5-kartowe kombinacje, których jest $\binom{52}{5}= 2598960$ można pogrupować w według ich siły. Na przykład układ $A\clubs, K\clubs, Q\clubs, J\clubs, T\clubs$ jest identyczny pod względem siły z $A\hearts, K\hearts, $ $Q\hearts, J\hearts, T\hearts$, gdyż każdy z układów to najwyższy możliwy do uzyskania poker. Grupując w taki sposób wszystkie możliwe kombinacje uzyskujemy tylko 7462 porównywalnych wartości. Grupy te nazwiemy \emph{klasami równoważności}.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{lll}
+        Układ & Unikalne & Zredukowane \\
+        \midrule
+        Poker          & 40                         & 10  \\
+        Kareta         & 624                        & 156   \\
+        Full           & 3744                       & 156  \\
+        Kolor          & 5108                       & 1277 \\
+        Strit          & 10200                      & 10 \\
+        Trójka         & 54912                      & 858  \\
+        Dwie pary      & 123552                     & 858  \\
+        Para           & 1098240                    & 2860 \\
+        Wysoka karta   & 1302540                    & 1277 \\
+        \bottomrule
+        Razem          & 2598960                    & 7462 \\
+        \bottomrule
+    \end{tabular}
+    \caption{\label{tab:catus-kev-reduction}Redukcja 5-kartowych kombinacji według ich siły}
+\end{table}
+
+
+Ewaluator \emph{Cactus Kev's} przyjmując 5 kart zwraca liczbę od 1 do 7462, reprezentującą układ, gdzie 1 oznacza najsilniejszy układ, a 7462 najsłabszy.
+
+Pojedyncza karta reprezentowana jest jako 32 bitowa liczba:
+
+\scalebox{0.6}{
+    \begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|l|}
+    \hline
+    - & - & - & B & B & B & B & B & B & B & B & B & C & D & H & S & R & R & R & R & X & X & P & P & P & P & P & P \\ \hline
+    \end{tabular}
+}
+
+gdzie:
+
+\begin{itemize}
+    \item Pierwsze 6 bitów P reprezentują rangę karty jako liczba pierwsza (dwójka - 2, trójka - 3, czwórka - 5, ... , as - 41)
+    \item Cztery bity R reprezentują rangę karty jako kolejna liczba naturalna (dwójka - 1, trójka - 2, czwórka - 3, ... , as - 12), nie są one wykorzystywane przez ewaluator w żaden sposób \label{chapter:3-r-bits}
+    \item Jeden z zapalonych bitów CDHS oznacza kolor karty (C - trefl, D - karo, H - kier, S - pik)
+    \item Dwanaście bitów B reprezentuję rangę karty jako kolejny zapalony bit (pierwszy zapalony bit to dwójka, drugi to trójka itd.)
+\end{itemize}
+
+Karty otrzymane na wejściu w powyższym formacie oznaczmy kolejno jako $C1$, $C2$, $C3$, $C4$, $C5$. W pierwszej kolejności ewaluator sprawdza, czy wszystkie karty są tego samego koloru korzystając z poniższej formuły:
+
+\begin{verbatim}
+isSuited = C1 AND C2 AND C3 AND C4 AND C5 AND 0xF000
+\end{verbatim}
+
+Jeżeli wartość \verb+isSuited+ nie jest równa zero, to wszystkie karty są tego samego koloru. W przypadku gdy układ jest kolorem lub pokerem obliczenie wartości polega na zajrzenie do tablicy \verb+flushes+, w której indeksem jest wyrażenie \verb+index+. Na przykład wartość przechowywana w tablicy \verb+flushes[0x1F00]+ jest równa 1, gdyż 1 jest \emph{klasą równoważności} odpowiadającą asowemu pokerowi.
+
+\begin{verbatim}
+index = (C1 OR C2 OR C3 OR C4 OR C5) >> 16
+\end{verbatim}
+
+Zauważmy, że najmniejsza możliwa wartość wyrażenia \verb+index+ to \verb+0x001F+ (31), a największa \verb+0x1F00+ (7936). Tablica \verb+flushes+ ma zatem długość 7936 i została wypełniona obliczonymi wcześniej \emph{klasami równoważności} za pomocą naiwnego algorytmu. Większość komórek w naszej tablicy to puste wartości, gdyż możliwych kolorów i pokerów jest $\binom{13}{5}= 1287$. W technice tablicowania \cite{lookup-tables} zyskujemy szybkość działania, w zamian za niewykorzystaną pamięć. 
+
+W przypadku, gdy wszystkie karty nie są tego samego koloru, możemy użyć tej samej techniki do sprawdzenia układów zawierające same unikalne karty --- Strit oraz Wysoka karta. Została skonstruowana tablica \verb+unique5+ zawierająca porównywalne wartości dla Strita oraz Wysokiej karty. Jej długość oraz indeksy pod którymi znajdują się niezerowe wartości są identyczne z tablicą \verb+flushes+, ponieważ układy poker --- strit, kolor --- wysoka karta różnią się tylko obecnością koloru. Indeksem w tej tablicy jest wartość wyrażenia \verb+index+. Oznacza to, że pod indeksem \verb+flushes[0x1F00]+ znajduje się wartość 1600, która oznacza asowego strita.
+
+Pozostają nam układy, w których występuje co najmniej jedno powtórzenie karty o tej samej randze. Do obliczenia takich układów posłużą nam bity P, reprezentujące poszczególne rangi jako liczby pierwsze.
+Aby uniknąć kosztownego sortowania kart, ewaluator korzysta z Podstawowego twierdzenia arytmetyki \cite{theorem-of-arithmetic} oraz przemienności mnożenia.
+
+\begin{verbatim}
+product = (C1 AND 0xFF) * (C2 AND 0xFF) * (C3 AND 0xFF) * 
+        (C4 AND 0xFF) * (C5 AND 0xFF)
+\end{verbatim}
+
+Największa wartość wyrażenia \verb+product+ to $41^4 \cdot 37=104553157$, zatem skonstruowanie tak dużej tablicy będzie wymagało za dużo pamięci. Autor rozwiązania obliczył wszystkie iloczyny liczb pierwszych dla pozostałych 4888 układów (7462-2574), posortował je oraz zapisał w tablicy \verb+products+. Następnie jest wyszukiwana binarnie \cite{binary-search} wartość \verb+product+ w tablicy, a otrzymany w ten sposób indeks posłuży nam jako indeks w tablicy \verb+value+, w której znajdują się wcześniej obliczone przez naiwny algorytm \emph{klasy równoważności}.
+
+\section{Poprawa wydajności Paula Senzee'a}
+
+Paul Senzee \cite{paul-senzee-improvements} zauważył, że ostatni krok algorytmu jest najbardziej czasochłonny oraz większość rąk wymaga jego wykonania. Zastąpił on zatem wyszukiwanie binarne korzystając z doskonałej minimalnej funkcji haszującej \cite{minimal-perfect-hash-function}. Skonstruował ją za pomocą programu do generowania tablic haszujących autorstwa Boba Jenkinsa \cite{bob-jenkins-hashing}. Dodatkowo, w sposób naiwny dodał możliwość ewaluacji 6 i 7 kartowych układów wywołując obliczenia dla każdej możliwej kombinacji i zwrócenie maksymalnej wartości.
+
+\section{Ewaluator TwoPlusTwo}
+
+W 2006 roku na jednym z najpopularniejszych forów pokerowych \emph{TwoPlusTwo} \cite{twoplustwo-thread} \cite{poker-hand-evaluator-roundup} została rozpoczęta praca nad \emph{ewaluatorem} przeznaczonym do sekwencyjnego obliczania siły układów. Ideą jest wykorzystanie wcześniej obliczonych częściowych wyników, aby jeszcze bardziej przyspieszyć proces ewaluacji dla dużej liczby kombinacji. 
+
+Ewaluator \emph{TwoPlusTwo} skupia się na konstrukcji automatu skończonego \cite{finite-state-machine}, w którym kolejne przejścia wyznaczane są na podstawie kolejnych kart. Od piątego wierzchołka możliwe jest zwrócenie typu układu razem z jego miejscem w rankingu względem tych samych układów. Na przykład dla asowego strita zwrócona zostanie kategoria 5, gdyż strit jest 5 układem licząc od najsłabszego oraz ranga 10, gdyż jest najwyższym stritem, a rozróżnialnych stritów jest 10. Podczas konstruowania grafu wykorzystywany jest ewaluator Cactus Kev razem z poprawkami Paul'a Senzee do obliczania siły układów . 
+
+
+\begin{figure}[h]
+\centering
+\fbox{ 
+    \begin{tikzpicture}[node distance=2cm]
+    
+    \node (pro1) [process] {$3\diamonds 4\spades 5\hearts A\spades$};
+    \coordinate[below of=pro1] (c1);
+    \coordinate[left of=c1] (c2);
+    \coordinate[right of=c1] (c3);
+    \node (pro2) [process, left of=c2] {$2\diamonds 3\diamonds 4\spades 5\hearts A\spades$};
+    \node (pro2a) [process, below of=pro2] {Kategoria: 5 Ranga: 1 \\ Piątkowy strit};
+    \node (pro3) [process, right of=c2] {$3\spades 3\diamonds 4\spades 5\hearts A\spades$};
+    \node (pro3a) [process, below of=pro3] {Kategoria: 2 Ranga: 388 \\ Para trójek};
+    \node (pro4) [process, right of=c3] {$3\diamonds 4\spades 4\hearts 5\hearts A\spades$};
+    \node (pro4) [process, right of=c3] {$3\diamonds 4\spades 4\hearts 5\hearts A\spades$};
+    \node (pro4a) [process, below of=pro4] {Kategoria: 2 Ranga: 608 \\ Para czwórek};
+    
+    \draw [arrow] (pro1) -- node[midway, above, sloped] {$2\diamonds$}(pro2);
+    \draw [arrow] (pro1) -- node[anchor=west] {$3\spades$}(pro3);
+    \draw [arrow] (pro1) -- node[midway, above, sloped] {$4\hearts$}(pro4);
+    \draw [arrow] (pro2) -- (pro2a);
+    \draw [arrow] (pro3) -- (pro3a);
+    \draw [arrow] (pro4) -- (pro4a);
+    \draw [arrow, <-] (pro1) -- node[above, anchor=west] {...} ++(0cm,2cm);
+    
+    \end{tikzpicture}
+}
+\caption{Przykładowa część grafu}
+\label{fig:graph-1}
+\end{figure}
+
+Tworzenie grafu wykorzystuje dwie poniższe techniki, redukujące znacząco liczbę wierzchołków:
+
+\begin{itemize}
+    \item Te same karty ułożone w dowolnej kolejności wskazują na ten sam wierzchołek (rysunek \ref{fig:graph-2})
+    
+    \begin{figure}[h]
+    \centering
+    \fbox{ 
+        \begin{tikzpicture}[node distance=2cm]
+        \coordinate[] (c1);
+        \node (pro1) [process, right of=c1] {$3\diamonds K\clubs A\spades$};
+        \node (pro2) [process, left of=c1] {$3\diamonds Q\diamonds A\spades$};
+        \node (pro3) [process, below of=c1] {$3\diamonds Q\diamonds K\clubs A\spades$};
+        
+        \draw [arrow] (pro2) -- node[anchor=east] {$K\clubs$}(pro3);
+        \draw [arrow] (pro1) -- node[anchor=west] {$Q\diamonds$}(pro3);
+       
+        \end{tikzpicture}
+    }
+    \caption{Te same karty w różnej kolejności wskazują na ten sam wierzchołek}
+    \label{fig:graph-2}   
+    \end{figure}
+    
+    \item Aby kolor był znaczący $n-2$ kart musi być tego samego koloru, gdzie $n$ to długość układu. Gdy kolor jest nieznaczący następuje redukcja wierzchołków, ignorując kolor we wszystkich kartach.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\fbox{ 
+    \begin{tikzpicture}[node distance=2cm]
+    \coordinate[] (c1);
+    \node (pro1) [process, right of=c1] {$2\clubs 3\diamonds 4\hearts$};
+    \node (pro2) [process, left of=c1] {$2\diamonds 3\hearts 4\spades$};
+    \node (pro3) [process, below of=c1] {$2\clubs 3\diamonds 4\hearts 5\spades$};
+    
+    \draw [arrow] (pro2) -- node[anchor=east] {$5\spades$}(pro3);
+    \draw [arrow] (pro1) -- node[anchor=west] {$5\clubs$}(pro3);
+    
+    \end{tikzpicture}
+}
+\caption{Redukcja wierzchołków po wykryciu nieznaczącego koloru. Dla 4 kartowego układu, aby kolor był znaczący przynajmniej dwie karty powinny mieć ten sam kolor.}
+\label{fig:graph-3}
+\end{figure}
+
+Aplikując powyższe zasady, graf zawiera 32487834 wierzchołków, przez co jego rozmiar na dysku to około 123 MB, w zamian uzyskując bardzo szybką ewaluację układów.
+Korzystając z ewaluatora \emph{TwoPlusTwo} wystarczy tylko 7 odczytów z naszego grafu, aby uzyskać siłę ręki dla 7 kartowego układu. 
+
+W poniższych pseudokodach wykorzystane są następujące oznaczenia zmiennych:
+
+\begin{description}
+  \item[Cards] jest zmienną zawierającą karty, dla których chcemy uzyskać siłę układu.
+  \item[HR] to automat skończony reprezentowany jako tablica.
+  \item[Pointer] oznacza zmienną, która wskazuje na aktualny element w grafie.
+  \item[Value] jest obliczoną siłą naszego układu.
+\end{description}
+
+\begin{Verbatim}[numbers=left,xleftmargin=5mm, frame=single]
+int LookupHand(int* cards)
+{
+    int pointer = HR[53 + *cards++];
+    pointer = HR[pointer + *cards++];
+    pointer = HR[pointer + *cards++];
+    pointer = HR[pointer + *cards++];
+    pointer = HR[pointer + *cards++];
+    pointer = HR[pointer + *cards++];
+    
+    int value = HR[pointer + *playerCards++];
+    
+    return value;
+}
+\end{Verbatim}
+
+Dodatkowo sekwencyjne przeszukiwanie rąk jest bardzo szybkie wykorzystując wcześniej otrzymane wskaźniki. Na przykład posiadając karty $3\hearts, T\spades, Q\clubs, A\diamonds$ chcemy obliczyć wszystkie możliwe 5-kartowe uzupełnienia . Obliczamy zatem wskaźnik do wcześniej wymienionego układu, a następnie przechodzimy po wszystkich pozostałych kartach w talii, wykorzystując ten wskaźnik:
+
+\begin{Verbatim}[numbers=left,xleftmargin=5mm, frame=single]
+    int pointer = HR[53 + *cards++];
+    pointer = HR[pointer + *cards++];
+    pointer = HR[pointer + *cards++];
+    pointer = HR[pointer + *cards++];
+
+    for(int i=0; i<deck.length(); i++){
+        second_pointer = HR[pointer + i];
+        value = HR[second_pointer];
+    }
+\end{Verbatim}
+
+W powyższym przykładzie wykonując $4 + (52-4) \cdot 2 = 100$ operacji odczytu z tablicy, której złożoność jest równa $O(1)$ otrzymaliśmy informację o sile 48 5-kartowych układów. Im większa jest liczba kart, do których chcemy uzupełnić układ tym więcej powyższa optymalizacja zyskuje na tle innych ewaluatorów, gdzie nie jesteśmy w stanie skorzystać z częściowo wcześniej obliczonych wyników. Technika ta jest podstawą działania silnika gry aplikacji \emph{Poker Master Tool}. 

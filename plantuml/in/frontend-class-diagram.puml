@@ -1,0 +1,44 @@
+@startuml frontened-class-diagram
+
+hide empty members
+
+class App << (A, PaleGoldenRod) >>
+
+class View << (V, CornflowerBlue) >>
+class BoardView << (V, CornflowerBlue) >>
+class DeathCardsView << (V, CornflowerBlue) >>
+class PlayersView << (V, CornflowerBlue) >>
+
+class BoardController
+class DeathCardsController
+class PlayersController
+class CursorController
+
+class CardsRepository << (R, Coral) >>
+
+
+package "Utils" #DDDDDD {
+  class ApiProxy << (U, DarkOrchid) >>
+  class Mapper << (U, DarkOrchid) >>
+}
+
+View *---up BoardView
+View *---left DeathCardsView
+View *---up PlayersView
+
+App *---left View
+
+App *-- BoardController
+App *-- DeathCardsController
+App *-- PlayersController
+
+BoardController *-- CursorController
+
+BoardController *-- CardsRepository
+DeathCardsController *-- CardsRepository
+PlayersController *-- CardsRepository
+
+App *---up ApiProxy
+App *---up Mapper
+
+@enduml

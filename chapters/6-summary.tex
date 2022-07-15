@@ -1,0 +1,14 @@
+\chapter{Podsumowanie}
+\label{chapter:6}
+
+W ramach niniejszej pracy został zbudowany pokerowy kalkulator szans, który wyróżnia się na tle konkurencyjnych rozwiązań i wypełnia lukę w obecnym rynku. Odświeżony kod ewaluatora z gotowym rozszerzeniem dla środowiska Node.js może być przydatny do implementacji rozwiązań pokerowych przez innych programistów. 
+
+Architektura aplikacji wykorzystuje wiele technologii oraz korzysta z szerokiej gamy wzorców projektowych, aby usprawnić proces rozwoju oprogramowania oraz wydajnie wykonywać obliczenia. 
+
+Dalszy praca nad aplikacją mogłaby skupić się na jeszcze szybszym działaniu. Ztablicowanie przypadków dla dwóch graczy wydaje się rozsądnym kierunkiem, biorąc pod uwagę fakt, że są to najczęstsze przypadki użycia. Liczba zapamiętanych kombinacji jest równa $\binom{52}{2} \cdot \binom{50}{2} \cdot \frac{1}{2} = 812175$ bez wykonywania możliwych prób redukcji tej liczby. Dodanie do istniejącej infrastruktury bazy danych byłoby wskazane w celu przechowania wcześniej obliczonych wartości.
+
+Następną sugerowaną poprawką jest uproszczenie generowanie grafu dla silnika gry. Reprezentacja karty w ewaluatorze \emph{Cactus Kev's} nie wykorzystuje \hyperref[chapter:3-r-bits]{bitów oznaczonych jako R}, co nie potrzebnie zaciemnia działanie algorytmu.
+
+Kolejnym mechanizmem, który jest przydatny to utrzymywanie odpowiedzi z wykonanych żądań po stronie aplikacji klienta. Gdy wykonujemy żądanie z tymi samymi parametrami, spodziewamy się tego samego wyniku, zatem nie trzeba wykonywać ponownie zapytania do serwera.
+
+Mimo istnienia powyższych ulepszeń istotnie usprawniających działanie aplikacji, oprogramowanie jest w pełni gotowe do użycia dla użytkowników i zawiera wszystkie przewidziane funkcjonalności.

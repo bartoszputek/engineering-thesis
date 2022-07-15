@@ -1,0 +1,60 @@
+@startuml backend-sequence-diagram
+
+collections "**App**" as app #Application
+collections "**ComputeHand**\n**Handler**\nIHandler" as handler #Chocolate
+collections "**ComputeHand**\n**Controller**\nIController" as controller #Orchid
+boundary "**Addon**\nSilnik gry" as addon #RoyalBlue
+database "**Cache**\n**InMemory**\nICache" as cache #LawnGreen
+skinparam defaultTextAlignment center
+
+[-> app : **POST /** (query)
+activate app
+
+app -> handler : **validate()**
+
+activate handler
+
+  alt błąd walidacji
+  app <-- handler : throw ValidationError
+
+  [<-- app : Error 400
+  end
+deactivate handler
+
+app -> handler : **handle()**
+
+activate handler
+  handler -> controller : **execute()**
+
+  activate controller
+    controller -> cache : **get()**  
+
+    activate cache
+      controller <-- cache : :IComputeHand\nResponse
+    deactivate cache
+
+    alt brak wyniku w cache
+
+      controller -> addon : **calculate()**
+
+      activate addon
+        controller <-- addon : :IComputeHand\nResponse
+      deactivate
+
+      controller ->> cache : **set()**
+
+    end
+
+    handler <-- controller : :IComputeHand\nResponse
+
+  deactivate controller
+
+  app <-- handler : :IComputeHand\nResponse
+
+deactivate handler
+
+[<-- app : :IComputeHand\nResponse
+deactivate app
+
+
+@enduml

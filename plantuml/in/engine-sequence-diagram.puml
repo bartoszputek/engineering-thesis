@@ -1,0 +1,48 @@
+@startuml engine-sequence-diagram
+
+collections "**JS Wrapper**\naddon.js" as wrapper #Application
+collections "**Addon proxy**\nasync.cpp" as proxy #Chocolate
+collections "**Calculator**\ncalculator.cpp" as calculator #Orchid
+skinparam defaultTextAlignment center
+
+[-> wrapper : **calculate()**
+activate wrapper
+
+wrapper -> wrapper : walidacja danych 
+
+wrapper -> proxy : **calculateAsync()**
+
+activate proxy
+  proxy -> proxy : Mapowanie typów\n z JS do C++
+
+  proxy -> calculator : **compute()**
+
+deactivate proxy
+
+  activate calculator
+    calculator -> calculator : Przygotowanie danych\nwejściowych   
+
+    calculator -> calculator : Generowanie kombinacji
+    
+    loop dla każdej kombinacji
+        calculator -> calculator : Ustalenie zwycięzcy\noraz układu
+    end
+
+    calculator -> calculator : Obliczenie procentowych\nszans na wygraną
+
+    proxy <-- calculator : :Results
+
+  deactivate calculator
+
+  activate proxy
+    proxy -> proxy : Mapowanie typów\n z C++ do JS
+
+    wrapper <-- proxy : :ICalculate\nResponse
+  deactivate proxy
+
+
+[<-- wrapper : :IComputeHand\nResponse
+deactivate wrapper
+
+
+@enduml

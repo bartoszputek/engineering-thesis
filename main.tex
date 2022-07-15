@@ -1,0 +1,174 @@
+\RequirePackage[dvipsnames]{xcolor}
+\documentclass[shortabstract, inz]{iithesis}
+
+\usepackage[utf8]{inputenc}
+
+%%%%% DANE DO STRONY TYTUŁOWEJ
+\polishtitle    {Poker Master Tool --- Sieciowy kalkulator \fmlinebreak układów dla Texas Holdem}
+\englishtitle   {Poker Master Tool --- Web hand calculator for Poker Texas Holdem}
+\polishabstract {
+Celem pracy jest stworzenie kalkulatora układów dla gry Poker Texas Holdem. Wyzwaniem jest przygotowanie szybko działającego rozwiązania w środowisku webowym. Aplikacja ma także na celu zaprojektowanie intuicyjnego interfejsu użytkownika, które zachęci graczy do poznawania teorii pokera.
+Praca zawiera wprowadzenie do gry poker Texas Holdem, wyjaśnia działanie ewaluatorów oraz kalkulatorów szans, opisuje implementację i architekturę rozwiązania oraz zawiera instrukcję użytkownika.
+}
+\englishabstract{
+The purpose of the thesis is creation poker hand calculator for Texas Holdem. The challenge is preparing a fast solution in a web environment. Another goal is to encourage players to expand their knowledge and therefore the application should contain an intuitive user interface. The paper includes an introduction to the card game Poker Texas Holdem, explains the mechanism of poker evaluators and calculators, describes the implementation and architecture of the software with a user manual.
+}
+\author         {Bartosz Putek}
+\advisor        {dr hab. Artur Jeż}
+\date          {23 czerwca 2022}                     % Data zlozenia pracy
+% Dane do oswiadczenia o autorskim wykonaniu
+\transcriptnum {308946}                     % Numer indeksu
+\advisorgen    {dr hab. Artura Jeża} % Nazwisko promotora w dopelniaczu
+%%%%%
+
+%%%%% WLASNE DODATKOWE PAKIETY
+%
+\usepackage{graphicx, fdsymbol}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usepackage{fancyvrb}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usetikzlibrary{shapes.geometric, arrows}
+
+%
+%%%%% WŁASNE DEFINICJE I POLECENIA
+%
+
+\newcommand{\clubs}{\textcolor{OliveGreen}{\clubsuit}}
+\newcommand{\spades}{\spadesuit}
+\newcommand{\hearts}{\textcolor{red}{\varheartsuit}}
+\newcommand{\diamonds}{\textcolor{blue}{\vardiamondsuit}}
+
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, text width=3.3cm, draw=black, fill=orange!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+\lstset{frame=single, numbers=left}
+
+%%%%%
+
+\begin{document}
+
+\include{chapters/1-introduction}
+
+\include{chapters/2-poker-rules-and-equity-calculators}
+
+\include{chapters/3-hand-evaluators}
+
+\include{chapters/4-implementation-description}
+
+\include{chapters/5-user-manual}
+
+\include{chapters/6-summary}
+
+%%%%% BIBLIOGRAFIA
+
+\begin{thebibliography}{1}
+\bibitem{wiki-poker}
+\textit{Artykuł Poker.} 
+w: Wikipedia, the free encyclopedia [online], dostępny w:
+\url{https://en.wikipedia.org/wiki/Poker},
+dostęp 16.06.2022.
+
+\bibitem{wiki-texas-holdem}
+\textit{Artykuł Texas Hold’em.} 
+w: Wikipedia, the free encyclopedia [online], dostępny w:
+\url{https://pl.wikipedia.org/wiki/Texas_Hold%E2%80%99em},
+dostęp 16.06.2022.
+
+\bibitem{monte-carlo}
+\textit{Artykuł Monte Carlo Method.} 
+w: Sciencedirect [online], dostępny w:
+\url{https://www.sciencedirect.com/topics/medicine-and-dentistry/monte-carlo-method},
+dostęp 16.06.2022.
+
+\bibitem{monte-carlo-presentation} 
+Dr hab. inż. Łukasz Madej
+\textit{Prezentacja Metoda Monte Carlo - podstawy} 
+w: agh.edu.pl [online], dostępny w:
+\url{http://home.agh.edu.pl/~lmadej/wp-content/uploads/wyklad_9_MC.pdf},
+dostęp 16.06.2022.
+
+\bibitem{cactus-kev-evaluator} 
+Kevin Suffecool
+\textit{Cactus Kev's Poker Hand Evaluator} 
+dostępny w:
+\url{http://suffe.cool/poker/evaluator.html},
+dostęp 16.06.2022.
+
+\bibitem{cactus-kev-equivalence-classes} 
+Kevin Suffecool
+\textit{Cactus Kev's Equivalence Classes} 
+dostępny w:
+\url{http://suffe.cool/poker/7462.html},
+dostęp 16.06.2022.
+
+\bibitem{theorem-of-arithmetic} 
+\textit{Artykuł Fundamental theorem of arithmetic.} 
+w: Wolfram MathWorld. [online], dostępny w:
+\url{https://mathworld.wolfram.com/FundamentalTheoremofArithmetic.html},
+dostęp 16.06.2022.
+
+\bibitem{lookup-tables} 
+\textit{Lookup table.} 
+w: Wikipedia, the free encyclopedia [online], dostępny w:
+\url{https://en.wikipedia.org/wiki/Lookup_table},
+dostęp 16.06.2022.
+
+\bibitem{binary-search} 
+\textit{Binary search algorithm.} 
+w: Wikipedia, the free encyclopedia [online], dostępny w:
+\url{https://en.wikipedia.org/wiki/Binary_search_algorithm},
+dostęp 16.06.2022.
+
+\bibitem{paul-senzee-improvements} 
+Paul Senzee
+\textit{Wpis na blogu - Some Perfect Hash.} 
+w: Senzee Blogspot [online], dostępny w:
+\url{http://senzee.blogspot.com/2006/06/some-perfect-hash.html},
+dostęp 16.06.2022.
+
+\bibitem{minimal-perfect-hash-function} 
+Ben Coleman
+\textit{Artykuł Minimal perfect hash functions.} 
+w: Randorithms [online], dostępny w:
+\url{https://randorithms.com/2019/09/12/MPH-functions.html},
+dostęp 16.06.2022.
+
+\bibitem{bob-jenkins-hashing} 
+Bob Jenkins
+\textit{Code for perfect hashing.} 
+w: Burtleburtle.net [online], dostępny w:
+\url{http://burtleburtle.net/bob/index.html},
+dostęp 16.06.2022.
+
+\bibitem{twoplustwo-thread} 
+Wątek na forum 
+\textit{7 Card Hand Evaluators.} 
+w: Twoplustwo.com [online], dostępny w:
+\url{https://forumserver.twoplustwo.com/45/general-software-discussion/7-card-hand-evaluators-597},
+dostęp 16.06.2022.
+
+\bibitem{poker-hand-evaluator-roundup} 
+\textit{The Great Poker Hand Evaluator Roundup.} 
+w: Codingthewheel.com/ [online], dostępny w:
+\url{https://www.codingthewheel.com/archives/poker-hand-evaluator-roundup},
+dostęp 16.06.2022.
+
+\bibitem{finite-state-machine}
+\textit{Artykuł Finite-state machine.} 
+w: Wikipedia, the free encyclopedia [online], dostępny w:
+\url{https://en.wikipedia.org/wiki/Finite-state_machine},
+dostęp 16.06.2022.
+
+\bibitem{mocks-arent-stubs} 
+Martin Fowler
+\textit{Mocks Aren't Stubs} 
+w: Martinfowler.com [online], dostępny w:
+\url{https://martinfowler.com/articles/mocksArentStubs.html},
+dostęp 16.06.2022.
+
+\end{thebibliography}
+
+\end{document}
